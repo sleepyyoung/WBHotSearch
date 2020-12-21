@@ -20,3 +20,12 @@
 
 · 如果还有发现有侵权的某些内容，请联系QQ：1696589321，备注来意，核实后删除
 
+# 打赏：
+
+![weixin](https://github.com/sleepyyoung/WBHotSearch/blob/main/pictures/weixin.png)
+
+![ketou](https://github.com/sleepyyoung/WBHotSearch/blob/main/pictures/ketou.jpg)
+
+![zhifubao](https://github.com/sleepyyoung/WBHotSearch/blob/main/pictures/zhifubao.png)
+
+
