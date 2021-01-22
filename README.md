@@ -1,4 +1,4 @@
-# [HotSearch时光机 - 一个历史微博热搜查询网站](http://wblsrs.top/)
+# [HotSearch时光机 - 一个微博历史热搜查询网站](http://www.wblsrs.top/)
 
 **网站目前可以按照时间查询（`精确到分`）、按照内容查询（有`模糊查询`和`精确查询`两种查询模式）**
 
@@ -6,7 +6,7 @@
 
 · 数据一分钟更新一次
 
-· 为了避免恶意爬虫，本站需[登录](http://wblsrs.top/login/)方可使用
+· 为了避免恶意爬虫，本站需[登录](http://www.wblsrs.top/login/)方可使用
 
 · 如果网站在使用过程中出现了了什么问题，专业人士请到 [Issues](https://github.com/sleepyyoung/WBHotSearch/issues) 提反馈；非专业人士可以发送至邮箱 1696589321@qq.com 提交反馈
 
