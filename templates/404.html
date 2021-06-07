@@ -1,0 +1,29 @@
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <title>微博历史热搜-404</title>
+    <link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <script>
+        function countDown() {
+            var time = document.getElementById("count_down");
+            if (time.innerHTML === '0') {
+                window.location.href = "/"
+            } else {
+                time.innerHTML = time.innerHTML - 1;
+            }
+        }
+
+        window.setInterval("countDown()", 1000);
+    </script>
+</head>
+
+<body>
+<div class="container">
+    <div class="jumbotron">
+        <h1>404 PAGE NOT FOUND</h1>
+        <p><a href="/">微博历史热搜</a>提醒您：你当前访问的链接<strong>页面不存在</strong></p>
+        <p><span><u id="count_down">9</u>&nbsp;&nbsp;秒 后 将 </span><a href="/"> 返回首页</a></p>
+    </div>
+</div>
+</body>
+</html>

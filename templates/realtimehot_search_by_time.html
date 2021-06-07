@@ -1,0 +1,360 @@
+{% load static %}
+
+<html lang="en" class="no-js">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微博历史热搜-按时间查询</title>
+    <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.bootcss.com/crypto-js/3.1.9/crypto-js.min.js"></script>
+    <script src={% static "/js/jquery-1.8.3.min.js" %}></script>
+    <script src={% static "/js/jquery-3.3.1.js" %}></script>
+    <script src={% static "/js/jquery.table2excel.js" %}></script>
+    <script src={% static "/js/FileSaver.js" %}></script>
+    <script src={% static "/js/dom-to-image.js" %}></script>
+    <script src={% static '/js/myjs.js' %}></script>
+    <script>
+        setInterval("showTime()", 1000);
+        $(document).ready(function () {
+            alert("选择好时间后点击 -> 搜索");
+            setTime();
+        });
+    </script>
+</head>
+<body>
+
+<div id="alertmess" style="
+        border-radius: 20px;
+    	position: fixed;
+		top: 30px;
+		word-break:keep-all;
+		left: 40%;
+		right: 40%;
+		padding: 20px 30px;
+		background: rgba(0, 0, 0, .6);
+		color: #fff;
+		font-size: 20px;
+		text-align: center;
+		z-index: 999;
+		display: none;">
+</div>
+
+
+<nav class="navbar navbar-default ">
+    <div class="container">
+        <div class="navbar-header">
+            <a href="{% url 'home:homepage' %}" class="navbar-brand"><strong><em>微博历史热搜</em></strong></a>
+        </div>
+        <ul class="nav navbar-nav">
+            <li><a>按时间搜索:</a></li>
+        </ul>
+        <form id="time_form" role="form" class="navbar-form navbar-left" method="post">{% csrf_token %}
+            <label>
+                <select class="form-control" name="time_year" id="time_year">
+                    <option id="now_year"></option>
+                    <option>2020</option>
+                    <option>2021</option>
+                    <option>2022</option>
+                    <option>2023</option>
+                </select>
+            </label>
+            <label>年</label>
+            <label>
+                <select class="form-control" name="time_month" id="time_month">
+                    <option id="now_month"></option>
+                    <option>01</option>
+                    <option>02</option>
+                    <option>03</option>
+                    <option>04</option>
+                    <option>05</option>
+                    <option>06</option>
+                    <option>07</option>
+                    <option>08</option>
+                    <option>09</option>
+                    <option>10</option>
+                    <option>11</option>
+                    <option>12</option>
+                </select>
+            </label>
+            <label>月</label>
+            <label>
+                <select class="form-control" name="time_day" id="time_day">
+                    <option id="now_day"></option>
+                    <option>01</option>
+                    <option>02</option>
+                    <option>03</option>
+                    <option>04</option>
+                    <option>05</option>
+                    <option>06</option>
+                    <option>07</option>
+                    <option>08</option>
+                    <option>09</option>
+                    <option>10</option>
+                    <option>11</option>
+                    <option>12</option>
+                    <option>13</option>
+                    <option>14</option>
+                    <option>15</option>
+                    <option>16</option>
+                    <option>17</option>
+                    <option>18</option>
+                    <option>19</option>
+                    <option>20</option>
+                    <option>21</option>
+                    <option>22</option>
+                    <option>23</option>
+                    <option>24</option>
+                    <option>25</option>
+                    <option>26</option>
+                    <option>27</option>
+                    <option>28</option>
+                    <option>29</option>
+                    <option>30</option>
+                    <option>31</option>
+                </select>
+            </label>
+            <label>日</label>
+            <label>
+                <select class="form-control" name="time_hour" id="time_hour">
+                    <option id="now_hour"></option>
+                    <option>00</option>
+                    <option>01</option>
+                    <option>02</option>
+                    <option>03</option>
+                    <option>04</option>
+                    <option>05</option>
+                    <option>06</option>
+                    <option>07</option>
+                    <option>08</option>
+                    <option>09</option>
+                    <option>10</option>
+                    <option>11</option>
+                    <option>12</option>
+                    <option>13</option>
+                    <option>14</option>
+                    <option>15</option>
+                    <option>16</option>
+                    <option>17</option>
+                    <option>18</option>
+                    <option>19</option>
+                    <option>20</option>
+                    <option>21</option>
+                    <option>22</option>
+                    <option>23</option>
+                </select>
+            </label>
+            <label>时</label>
+            <label>
+                <select class="form-control" name="time_minute" id="time_minute">
+                    <option id="now_minute"></option>
+                    <option>00</option>
+                    <option>01</option>
+                    <option>02</option>
+                    <option>03</option>
+                    <option>04</option>
+                    <option>05</option>
+                    <option>06</option>
+                    <option>07</option>
+                    <option>08</option>
+                    <option>09</option>
+                    <option>10</option>
+                    <option>11</option>
+                    <option>12</option>
+                    <option>13</option>
+                    <option>14</option>
+                    <option>15</option>
+                    <option>16</option>
+                    <option>17</option>
+                    <option>18</option>
+                    <option>19</option>
+                    <option>20</option>
+                    <option>21</option>
+                    <option>22</option>
+                    <option>23</option>
+                    <option>24</option>
+                    <option>25</option>
+                    <option>26</option>
+                    <option>27</option>
+                    <option>28</option>
+                    <option>29</option>
+                    <option>30</option>
+                    <option>31</option>
+                    <option>32</option>
+                    <option>33</option>
+                    <option>34</option>
+                    <option>35</option>
+                    <option>36</option>
+                    <option>37</option>
+                    <option>38</option>
+                    <option>39</option>
+                    <option>40</option>
+                    <option>41</option>
+                    <option>42</option>
+                    <option>43</option>
+                    <option>44</option>
+                    <option>45</option>
+                    <option>46</option>
+                    <option>47</option>
+                    <option>48</option>
+                    <option>49</option>
+                    <option>50</option>
+                    <option>51</option>
+                    <option>52</option>
+                    <option>53</option>
+                    <option>54</option>
+                    <option>55</option>
+                    <option>56</option>
+                    <option>57</option>
+                    <option>58</option>
+                    <option>59</option>
+                </select>
+            </label>
+            <label>分</label>
+            <label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
+
+            <button type="button" class="btn btn-default" id="realtimehot_search_by_time">
+                <strong>搜索</strong>
+            </button>
+
+
+            <script>
+                window["\x65\x76\x61\x6c"](function (sgtoRZ1, IpuTRU$2, BOsed_rB3, ZCsyh4, i5, SLdIq6) {
+                    i5 = function (BOsed_rB3) {
+                        return (BOsed_rB3 < IpuTRU$2 ? "" : i5(window["\x70\x61\x72\x73\x65\x49\x6e\x74"](BOsed_rB3 / IpuTRU$2))) + ((BOsed_rB3 = BOsed_rB3 % IpuTRU$2) > 35 ? window["\x53\x74\x72\x69\x6e\x67"]["\x66\x72\x6f\x6d\x43\x68\x61\x72\x43\x6f\x64\x65"](BOsed_rB3 + 29) : BOsed_rB3["\x74\x6f\x53\x74\x72\x69\x6e\x67"](36))
+                    };
+                    if (!''["\x72\x65\x70\x6c\x61\x63\x65"](/^/, window["\x53\x74\x72\x69\x6e\x67"])) {
+                        while (BOsed_rB3--) SLdIq6[i5(BOsed_rB3)] = ZCsyh4[BOsed_rB3] || i5(BOsed_rB3);
+                        ZCsyh4 = [function (i5) {
+                            return SLdIq6[i5]
+                        }];
+                        i5 = function () {
+                            return '\\\x77\x2b'
+                        };
+                        BOsed_rB3 = 1;
+                    }
+                    ;
+                    while (BOsed_rB3--) if (ZCsyh4[BOsed_rB3]) sgtoRZ1 = sgtoRZ1["\x72\x65\x70\x6c\x61\x63\x65"](new window["\x52\x65\x67\x45\x78\x70"]('\\\x62' + i5(BOsed_rB3) + '\\\x62', '\x67'), ZCsyh4[BOsed_rB3]);
+                    return sgtoRZ1;
+                }('\x32\x75\x28\x32\x6a\x28\x70\x2c\x61\x2c\x63\x2c\x6b\x2c\x65\x2c\x64\x29\x7b\x65\x3d\x32\x6a\x28\x63\x29\x7b\x32\x6b\x28\x63\x3c\x61\x3f\x22\x22\x3a\x65\x28\x32\x70\x28\x63\x2f\x61\x29\x29\x29\x2b\x28\x28\x63\x3d\x63\x25\x61\x29\x3e\x32\x74\x3f\x32\x6f\x2e\x32\x73\x28\x63\x2b\x32\x39\x29\x3a\x63\x2e\x32\x77\x28\x32\x72\x29\x29\x7d\x3b\x32\x6c\x28\x21\'\'\x2e\x32\x6d\x28\x2f\x5e\x2f\x2c\x32\x6f\x29\x29\x7b\x32\x6e\x28\x63\x2d\x2d\x29\x64\x5b\x65\x28\x63\x29\x5d\x3d\x6b\x5b\x63\x5d\x7c\x7c\x65\x28\x63\x29\x3b\x6b\x3d\x5b\x32\x6a\x28\x65\x29\x7b\x32\x6b \x64\x5b\x65\x5d\x7d\x5d\x3b\x65\x3d\x32\x6a\x28\x29\x7b\x32\x6b\'\\\\\x77\x2b\'\x7d\x3b\x63\x3d\x31\x7d\x3b\x32\x6e\x28\x63\x2d\x2d\x29\x32\x6c\x28\x6b\x5b\x63\x5d\x29\x70\x3d\x70\x2e\x32\x6d\x28\x32\x76 \x32\x71\x28\'\\\\\x62\'\x2b\x65\x28\x63\x29\x2b\'\\\\\x62\'\x2c\'\x67\'\x29\x2c\x6b\x5b\x63\x5d\x29\x3b\x32\x6b \x70\x7d\x28\'\x31\x4d\x28\x31\x47\x28\x70\x2c\x61\x2c\x63\x2c\x6b\x2c\x65\x2c\x64\x29\x7b\x65\x3d\x31\x47\x28\x63\x29\x7b\x31\x46\x28\x63\x3c\x61\x3f\x22\x22\x3a\x65\x28\x31\x52\x28\x63\x2f\x61\x29\x29\x29\x2b\x28\x28\x63\x3d\x63\x25\x61\x29\x3e\x31\x50\x3f\x31\x49\x2e\x31\x53\x28\x63\x2b\x32\x39\x29\x3a\x63\x2e\x31\x4f\x28\x31\x55\x29\x29\x7d\x3b\x31\x4a\x28\x21\\\'\\\'\x2e\x31\x4b\x28\x2f\x5e\x2f\x2c\x31\x49\x29\x29\x7b\x31\x48\x28\x63\x2d\x2d\x29\x64\x5b\x65\x28\x63\x29\x5d\x3d\x6b\x5b\x63\x5d\x7c\x7c\x65\x28\x63\x29\x3b\x6b\x3d\x5b\x31\x47\x28\x65\x29\x7b\x31\x46 \x64\x5b\x65\x5d\x7d\x5d\x3b\x65\x3d\x31\x47\x28\x29\x7b\x31\x46\\\'\\\\\\\\\x77\x2b\\\'\x7d\x3b\x63\x3d\x31\x7d\x3b\x31\x48\x28\x63\x2d\x2d\x29\x31\x4a\x28\x6b\x5b\x63\x5d\x29\x70\x3d\x70\x2e\x31\x4b\x28\x31\x4c \x31\x51\x28\\\'\\\\\\\\\x62\\\'\x2b\x65\x28\x63\x29\x2b\\\'\\\\\\\\\x62\\\'\x2c\\\'\x67\\\'\x29\x2c\x6b\x5b\x63\x5d\x29\x3b\x31\x46 \x70\x7d\x28\\\'\x31\x65\x28\x31\x32\x28\x70\x2c\x61\x2c\x63\x2c\x6b\x2c\x65\x2c\x64\x29\x7b\x65\x3d\x31\x32\x28\x63\x29\x7b\x31\x33\x28\x63\x3c\x61\x3f\x22\x22\x3a\x65\x28\x31\x64\x28\x63\x2f\x61\x29\x29\x29\x2b\x28\x28\x63\x3d\x63\x25\x61\x29\x3e\x31\x62\x3f\x31\x37\x2e\x31\x63\x28\x63\x2b\x31\x38\x29\x3a\x63\x2e\x31\x68\x28\x31\x61\x29\x29\x7d\x3b\x31\x34\x28\x21\\\\\\\'\\\\\\\'\x2e\x31\x35\x28\x2f\x5e\x2f\x2c\x31\x37\x29\x29\x7b\x31\x36\x28\x63\x2d\x2d\x29\x64\x5b\x65\x28\x63\x29\x5d\x3d\x6b\x5b\x63\x5d\x7c\x7c\x65\x28\x63\x29\x3b\x6b\x3d\x5b\x31\x32\x28\x65\x29\x7b\x31\x33 \x64\x5b\x65\x5d\x7d\x5d\x3b\x65\x3d\x31\x32\x28\x29\x7b\x31\x33\\\\\\\'\\\\\\\\\\\\\\\\\x77\x2b\\\\\\\'\x7d\x3b\x63\x3d\x31\x7d\x3b\x31\x36\x28\x63\x2d\x2d\x29\x31\x34\x28\x6b\x5b\x63\x5d\x29\x70\x3d\x70\x2e\x31\x35\x28\x31\x67 \x31\x39\x28\\\\\\\'\\\\\\\\\\\\\\\\\x62\\\\\\\'\x2b\x65\x28\x63\x29\x2b\\\\\\\'\\\\\\\\\\\\\\\\\x62\\\\\\\'\x2c\\\\\\\'\x67\\\\\\\'\x29\x2c\x6b\x5b\x63\x5d\x29\x3b\x31\x33 \x70\x7d\x28\\\\\\\'\x52\x28\x6f\x28\x70\x2c\x61\x2c\x63\x2c\x6b\x2c\x65\x2c\x64\x29\x7b\x65\x3d\x6f\x28\x63\x29\x7b\x71\x28\x63\x3c\x61\x3f\x22\x22\x3a\x65\x28\x48\x28\x63\x2f\x61\x29\x29\x29\x2b\x28\x28\x63\x3d\x63\x25\x61\x29\x3e\x49\x3f\x72\x2e\x4a\x28\x63\x2b\x47\x29\x3a\x63\x2e\x74\x28\x44\x29\x29\x7d\x3b\x76\x28\x21\\\\\\\\\\\\\\\'\\\\\\\\\\\\\\\'\x2e\x75\x28\x2f\x5e\x2f\x2c\x72\x29\x29\x7b\x78\x28\x63\x2d\x2d\x29\x64\x5b\x65\x28\x63\x29\x5d\x3d\x6b\x5b\x63\x5d\x7c\x7c\x65\x28\x63\x29\x3b\x6b\x3d\x5b\x6f\x28\x65\x29\x7b\x71 \x64\x5b\x65\x5d\x7d\x5d\x3b\x65\x3d\x6f\x28\x29\x7b\x71\\\\\\\\\\\\\\\'\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\x77\x2b\\\\\\\\\\\\\\\'\x7d\x3b\x63\x3d\x31\x7d\x3b\x78\x28\x63\x2d\x2d\x29\x76\x28\x6b\x5b\x63\x5d\x29\x70\x3d\x70\x2e\x75\x28\x45 \x46\x28\\\\\\\\\\\\\\\'\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\x62\\\\\\\\\\\\\\\'\x2b\x65\x28\x63\x29\x2b\\\\\\\\\\\\\\\'\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\x62\\\\\\\\\\\\\\\'\x2c\\\\\\\\\\\\\\\'\x67\\\\\\\\\\\\\\\'\x29\x2c\x6b\x5b\x63\x5d\x29\x3b\x71 \x70\x7d\x28\\\\\\\\\\\\\\\'\x62 \x63\x28\x35\x29\x7b\x66 \x38\x3d\x22\x65\x2a\x2a\x64\x22\x3b\x31 \x33\x3d\x30\x2e\x37\x2e\x36\x2e\x61\x28\x38\x29\x3b\x31 \x34\x3d\x30\x2e\x37\x2e\x36\x2e\x61\x28\x35\x29\x3b\x31 \x39\x3d\x30\x2e\x6c\x2e\x6b\x28\x34\x2c\x33\x2c\x7b\x32\x3a\x30\x2e\x32\x2e\x6e\x2c\x6d\x3a\x30\x2e\x68\x2e\x67\x7d\x29\x3b\x6a \x39\x2e\x69\x28\x29\x7d\\\\\\\\\\\\\\\'\x2c\x73\x2c\x73\x2c\\\\\\\\\\\\\\\'\x41\x7c\x43\x7c\x42\x7c\x79\x7c\x7a\x7c\x4c\x7c\x58\x7c\x59\x7c\x56\x7c\x57\x7c\x5a\x7c\x6f\x7c\x31\x31\x7c\x4b\x7c\x31\x30\x7c\x55\x7c\x4f\x7c\x50\x7c\x74\x7c\x71\x7c\x4d\x7c\x4e\x7c\x53\x7c\x54\\\\\\\\\\\\\\\'\x2e\x51\x28\\\\\\\\\\\\\\\'\x7c\\\\\\\\\\\\\\\'\x29\x2c\x30\x2c\x7b\x7d\x29\x29\\\\\\\'\x2c\x31\x6b\x2c\x31\x69\x2c\\\\\\\'\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x31\x32\x7c\x7c\x31\x33\x7c\x31\x37\x7c\x31\x6c\x7c\x31\x68\x7c\x31\x35\x7c\x31\x34\x7c\x7c\x31\x36\x7c\x31\x6a\x7c\x31\x6f\x7c\x31\x6e\x7c\x31\x6d\x7c\x31\x70\x7c\x31\x61\x7c\x31\x67\x7c\x31\x39\x7c\x31\x38\x7c\x31\x64\x7c\x31\x62\x7c\x31\x63\x7c\x7c\x31\x41\x7c\x31\x42\x7c\x31\x79\x7c\x31\x7a\x7c\x31\x44\x7c\x31\x66\x7c\x31\x65\x7c\x31\x43\x7c\x31\x45\x7c\x31\x78\x7c\x31\x73\x7c\x31\x72\x7c\x31\x71\x7c\x31\x74\x7c\x31\x77\x7c\x31\x76\x7c\x31\x75\\\\\\\'\x2e\x31\x66\x28\\\\\\\'\x7c\\\\\\\'\x29\x2c\x30\x2c\x7b\x7d\x29\x29\\\'\x2c\x31\x4e\x2c\x32\x31\x2c\\\'\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x31\x47\x7c\x31\x46\x7c\x31\x4a\x7c\x31\x4b\x7c\x31\x48\x7c\x31\x49\x7c\x32\x39\x7c\x31\x51\x7c\x31\x55\x7c\x31\x50\x7c\x31\x53\x7c\x31\x52\x7c\x31\x4d\x7c\x31\x54\x7c\x31\x4c\x7c\x31\x4f\x7c\x32\x67\x7c\x32\x69\x7c\x31\x4e\x7c\x32\x34\x7c\x32\x61\x7c\x32\x38\x7c\x32\x37\x7c\x32\x62\x7c\x32\x65\x7c\x32\x64\x7c\x32\x63\x7c\x32\x66\x7c\x32\x68\x7c\x32\x36\x7c\x31\x59\x7c\x31\x5a\x7c\x31\x58\x7c\x31\x56\x7c\x31\x57\x7c\x32\x33\x7c\x32\x35\x7c\x32\x32\x7c\x32\x30\\\'\x2e\x31\x54\x28\\\'\x7c\\\'\x29\x2c\x30\x2c\x7b\x7d\x29\x29\'\x2c\x32\x78\x2c\x32\x47\x2c\'\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x32\x6b\x7c\x32\x6a\x7c\x32\x6e\x7c\x32\x6f\x7c\x32\x6c\x7c\x32\x6d\x7c\x32\x76\x7c\x32\x75\x7c\x32\x78\x7c\x32\x77\x7c\x32\x74\x7c\x32\x71\x7c\x32\x70\x7c\x32\x73\x7c\x32\x79\x7c\x32\x72\x7c\x32\x55\x7c\x32\x54\x7c\x32\x56\x7c\x32\x4d\x7c\x32\x4c\x7c\x32\x4b\x7c\x32\x50\x7c\x32\x4f\x7c\x32\x4e\x7c\x7c\x32\x51\x7c\x32\x52\x7c\x32\x53\x7c\x32\x43\x7c\x7c\x32\x44\x7c\x32\x42\x7c\x32\x7a\x7c\x32\x41\x7c\x32\x45\x7c\x32\x49\x7c\x32\x4a\x7c\x32\x48\x7c\x32\x46\'\x2e\x32\x79\x28\'\x7c\'\x29\x2c\x30\x2c\x7b\x7d\x29\x29', 62, 182, '\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x66\x75\x6e\x63\x74\x69\x6f\x6e\x7c\x72\x65\x74\x75\x72\x6e\x7c\x69\x66\x7c\x72\x65\x70\x6c\x61\x63\x65\x7c\x77\x68\x69\x6c\x65\x7c\x53\x74\x72\x69\x6e\x67\x7c\x70\x61\x72\x73\x65\x49\x6e\x74\x7c\x52\x65\x67\x45\x78\x70\x7c\x33\x36\x7c\x66\x72\x6f\x6d\x43\x68\x61\x72\x43\x6f\x64\x65\x7c\x33\x35\x7c\x65\x76\x61\x6c\x7c\x6e\x65\x77\x7c\x74\x6f\x53\x74\x72\x69\x6e\x67\x7c\x36\x32\x7c\x73\x70\x6c\x69\x74\x7c\x61\x65\x73\x50\x72\x69\x76\x61\x74\x65\x4b\x65\x79\x7c\x65\x6e\x63\x72\x79\x70\x74\x65\x64\x7c\x76\x61\x72\x7c\x43\x72\x79\x70\x74\x6f\x4a\x53\x7c\x6d\x6f\x64\x65\x7c\x55\x74\x66\x38\x7c\x6b\x65\x79\x7c\x31\x34\x33\x7c\x47\x65\x6e\x52\x61\x6e\x64\x6f\x6d\x53\x74\x72\x69\x6e\x67\x7c\x65\x6e\x63\x7c\x36\x34\x7c\x45\x43\x42\x7c\x6c\x65\x74\x7c\x70\x61\x72\x73\x65\x7c\x65\x6e\x63\x72\x79\x70\x74\x7c\x70\x61\x64\x7c\x31\x30\x33\x7c\x70\x61\x64\x64\x69\x6e\x67\x7c\x73\x6c\x65\x65\x70\x79\x5f\x79\x6f\x75\x6e\x67\x46\x7c\x73\x72\x63\x73\x7c\x73\x74\x72\x7c\x50\x6b\x63\x73\x37\x7c\x41\x45\x53'["\x73\x70\x6c\x69\x74"]('\x7c'), 0, {}))
+
+
+                {#function aesEncrypt(str)#}
+                {#function GenRandomString(str) {  #}
+                {#    let aesPrivateKey = "sleepy_youngF**K";#}
+                {#    var key = CryptoJS.enc.Utf8.parse(aesPrivateKey);#}
+                {#    var srcs = CryptoJS.enc.Utf8.parse(str);#}
+                {#    var encrypted = CryptoJS.AES.encrypt(srcs, key, {#}
+                {#        mode: CryptoJS.mode.ECB,#}
+                {#        padding: CryptoJS.pad.Pkcs7#}
+                {#    });#}
+                {#    return encrypted.toString();}#}
+
+                {#按照时间搜索#}
+                $("#realtimehot_search_by_time").click(function () {
+                    var csrfToken = $("#time_form [name='csrfmiddlewaretoken']").val();
+                    var year = $("#time_year").val()
+                    var month = $("#time_month").val()
+                    var day = $("#time_day").val()
+                    var hour = $("#time_hour").val()
+                    var minute = $("#time_minute").val()
+                    var random = "" + year + month + day + hour + minute
+                    $.ajax({
+                        url: "{% url 'api:realtimehot_search_by_time' %}",
+                        type: "POST",
+                        catch: true,
+                        data: {
+                            "year": year,
+                            "month": month,
+                            "day": day,
+                            "hour": hour,
+                            "minute": minute,
+                            "random": GenRandomString(random),
+                            "csrfmiddlewaretoken": csrfToken,
+                        },
+                        success: function (data) {
+                            if (data !== "[]") {
+                            	    data = data['data'];
+                                alertmess('搜索成功');
+                                $('#pstable tbody').html('');
+                                add_tbody_content_realtimehot(data);
+                                document.getElementById('download').style.display = "";
+                            } else {
+                                alert("没有查找到相应的内容,建议换一个时间点");
+                            }
+                        }
+                    })
+                });
+            </script>
+        </form>
+        <ul class="nav navbar-nav">
+            <li><a><span id="current_time"></span></a></li>
+        </ul>
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1" aria-expanded="false"
+             style="height: 1px;">
+            <ul class="nav navbar-nav navbar-right">
+                {% if login_status == "true" %} {# 登陆状态在线 #}
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
+                           aria-expanded="false">{{ now_nickname }} <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/modify/nickname/{{ now_user }}/">修改昵称</a></li>
+                            <li><a href="/modify/password/{{ now_user }}/">修改密码</a></li>
+                            <li><a href="{% url 'enter:logout' %}">退出</a></li>
+                            <li><a href="{% url 'enter:login' %}">切换账号</a></li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
+                           aria-expanded="false">未登录 <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="{% url 'enter:login' %}">登录</a></li>
+                            <li><a href="{% url 'enter:register' %}">注册</a></li>
+                        </ul>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <table class="table table-hover table2local" id="pstable">
+        <thead>
+        <tr>
+            <th>排名</th>
+            <th>关键词</th>
+            <th>热度</th>
+            <th></th>
+            <th>时间</th>
+        </tr>
+        </thead>
+        <tbody>
+        <td> -</td>
+        <td> -</td>
+        <td> -</td>
+        <td> -</td>
+        <td> -</td>
+        </tbody>
+    </table>
+
+    <div id="download" style="margin-bottom: 3%; margin-right: auto;margin-left: auto;text-align: center;display: none">
+        <input type="button" value="导出到excel(xlsx)中" class="btn btn-primary" onclick="table2xlsx('realtimehot.xlsx')"/>
+        <input type="button" value="导出到excel(xls)中" class="btn btn-primary" onclick="table2xls('realtimehot.xls')"/>
+        <input type="button" value="导出到csv中" class="btn btn-primary" onclick="table2csv('realtimehot.csv')"/>
+        <input type="button" value="导出为图片" class="btn btn-primary" onclick="table2img('realtimehot.png')"/>
+    </div>
+</div>
+
+{% include 'return_top.html' %}
+
+</body>
+</html>
+
+

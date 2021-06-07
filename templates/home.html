@@ -1,0 +1,373 @@
+{% load static %}
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>微博历史热搜</title>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"
+            integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+            integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.min.js"
+            integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+            crossorigin="anonymous"></script>
+    <link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link href={% static "/css/home.css" %} rel="stylesheet">
+    <script src={% static "/js/jquery-1.8.3.min.js" %}></script>
+    <script src={% static "/js/jquery-3.3.1.js" %}></script>
+    <script src={% static '/layDate/laydate/laydate.js' %}></script>
+    <script src={% static '/js/myjs.js' %}></script>
+    <script type="text/javascript" src="https://assets.pyecharts.org/assets/echarts.min.js"></script>
+    <script type="text/javascript" src="https://assets.pyecharts.org/assets/maps/china.js"></script>
+    <script type="text/javascript" src="https://assets.pyecharts.org/assets/echarts-wordcloud.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $.get("{% url 'api:realtimehot_get_result_home' %}", function (data, status) {
+                now_realtimehot_content(data['data']);
+            });
+            $.get("{% url 'api:socialevent_get_result_home' %}", function (data, status) {
+                now_socialevent_content(data['data']);
+            });
+        });
+        setInterval(function () {
+            $.get("{% url 'api:realtimehot_get_result_home' %}", function (data, status) {
+                now_realtimehot_content(data['data']);
+            });
+            $.get("{% url 'api:socialevent_get_result_home' %}", function (data, status) {
+                now_socialevent_content(data['data']);
+            });
+        }, 60000)
+    </script>
+</head>
+<body>
+<div style="width:80%;height:800px;margin-left:auto;margin-right:auto;font-size:30px;" class="alert alert-warning alert-dismissible" role="alert">
+  <strong>网站上线半年来，数据已达千万级，但是由于服务器不到位（1核1G的轻量级ECS），现在已经支撑不住庞大的查询需求了（查询耗时很久并且经常性的502/504超时）...</strong>
+  <hr>
+  <strong>因此自<span style="color:red;">2021-06-06 21:00</span>起，本网站不会再有新数据进入，但是旧的数据还在（即<span style="color:red;">2020-12-25 21:46</span>至<span style="color:red;">2021-06-06 21:00</span>），还是可以查的，只是新数据不在这里了而已</strong>
+  <hr>
+  <strong>想要查询新的数据（自<span style="color:red;">2021-06-06 17:34:00</span>后）请移步：<a target="_blank" style="color:blue;" href="http://www.philpy.top/wblsrs" class="alert-link">http://www.philpy.top/wblsrs</a>查看自那之后的热搜数据（不需要登陆了）</strong>
+  <hr>
+  <strong>我将网站重构了一遍，挂在了我的个人博客网站（<a href="http://www.philpy.top/" target="_blank">http://www.philpy.top/</a>）之下，但是由于服务器不行，数据量太大，我也不想再迁移了...</strong>
+    <hr>
+  <strong>这个域名会在今年圣诞节到期，这个网站也会在那时关停</strong>
+    <hr>
+  <strong>感谢来访，希望它的数据曾经帮助过你</strong>
+      <hr>
+  <strong>最后，代码已开源，地址：<a href="https://github.com/sleepyyoung/wblsrs" target="_blank">https://github.com/sleepyyoung/wblsrs</a></strong>
+</div>
+<nav class="navbar navbar-default ">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
+                    aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a href="{% url 'home:homepage' %}" class="navbar-brand"><strong><em>微博历史热搜</em></strong></a>
+            <form class="navbar-form navbar-left" method="post" onsubmit="return false;">
+                <button type="button" class="btn btn-default" id="realtimehot_search_by_time">按时间搜索</button>
+                <script>
+                    $("#realtimehot_search_by_time").click(function () {
+                            window.open("{% url 'home:realtimehot_search_by_time' %}")
+                        }
+                    );
+                </script>
+
+
+                <button type="button" class="btn btn-default " id="realtimehot_search_by_content"
+                        data-toggle="modal" data-target="#myModal">按内容搜索
+                </button>
+
+                <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+                     aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                                    &times;
+                                </button>
+                                <h4 class="modal-title" id="myModalLabel">
+                                    请输入搜索内容
+                                </h4>
+                            </div>
+                            <div class="modal-body">
+                                <form id="content_form" role="form" class="navbar-form navbar-left"
+                                      onsubmit="return false;">{% csrf_token %}
+                                    <div class="form-group" style="width: 440px">
+                                        <label for="search_content"></label><input id="search_content" type="text"
+                                                                                   class="form-control"
+                                                                                   style="width: 99%"
+                                                                                   placeholder="请输入搜索内容:">
+                                    </div>
+                                    <div class="btn-group">
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-default dropdown-toggle"
+                                                    data-toggle="dropdown" id="content_search">
+                                                选择搜索条件
+                                                <span class="caret"></span>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li id="content_search_method_fuzzy"><a>模糊查询</a></li>
+                                                <li id="content_search_method_precise"><a>精确查询</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <script>
+                                        $("#content_search_method_fuzzy").click(function () {
+                                                window.open("{% url 'home:realtimehot_search_by_content' %}?&token=" +
+                                                    {#window.btoa(window.btoa("?content=" + check_content_search_somethings('fuzzy').search_content + "&method=fuzzy"))#}
+                                                    window["\x65\x76\x61\x6c"](function (XlC1, L2, zEpJyr3, B4, hKVwNbp5, y6) {
+                                                        hKVwNbp5 = function (zEpJyr3) {
+                                                            return (zEpJyr3 < L2 ? "" : hKVwNbp5(window["\x70\x61\x72\x73\x65\x49\x6e\x74"](zEpJyr3 / L2))) + ((zEpJyr3 = zEpJyr3 % L2) > 35 ? window["\x53\x74\x72\x69\x6e\x67"]["\x66\x72\x6f\x6d\x43\x68\x61\x72\x43\x6f\x64\x65"](zEpJyr3 + 29) : zEpJyr3["\x74\x6f\x53\x74\x72\x69\x6e\x67"](36))
+                                                        };
+                                                        if (!''["\x72\x65\x70\x6c\x61\x63\x65"](/^/, window["\x53\x74\x72\x69\x6e\x67"])) {
+                                                            while (zEpJyr3--) y6[hKVwNbp5(zEpJyr3)] = B4[zEpJyr3] || hKVwNbp5(zEpJyr3);
+                                                            B4 = [function (hKVwNbp5) {
+                                                                return y6[hKVwNbp5]
+                                                            }];
+                                                            hKVwNbp5 = function () {
+                                                                return '\\\x77\x2b'
+                                                            };
+                                                            zEpJyr3 = 1;
+                                                        }
+                                                        ;
+                                                        while (zEpJyr3--) if (B4[zEpJyr3]) XlC1 = XlC1["\x72\x65\x70\x6c\x61\x63\x65"](new window["\x52\x65\x67\x45\x78\x70"]('\\\x62' + hKVwNbp5(zEpJyr3) + '\\\x62', '\x67'), B4[zEpJyr3]);
+                                                        return XlC1;
+                                                    }('\x31\x65\x28\x31\x32\x28\x70\x2c\x61\x2c\x63\x2c\x6b\x2c\x65\x2c\x64\x29\x7b\x65\x3d\x31\x32\x28\x63\x29\x7b\x31\x33\x28\x63\x3c\x61\x3f\x22\x22\x3a\x65\x28\x31\x67\x28\x63\x2f\x61\x29\x29\x29\x2b\x28\x28\x63\x3d\x63\x25\x61\x29\x3e\x31\x68\x3f\x31\x34\x2e\x31\x39\x28\x63\x2b\x31\x62\x29\x3a\x63\x2e\x31\x38\x28\x31\x63\x29\x29\x7d\x3b\x31\x36\x28\x21\'\'\x2e\x31\x37\x28\x2f\x5e\x2f\x2c\x31\x34\x29\x29\x7b\x31\x35\x28\x63\x2d\x2d\x29\x64\x5b\x65\x28\x63\x29\x5d\x3d\x6b\x5b\x63\x5d\x7c\x7c\x65\x28\x63\x29\x3b\x6b\x3d\x5b\x31\x32\x28\x65\x29\x7b\x31\x33 \x64\x5b\x65\x5d\x7d\x5d\x3b\x65\x3d\x31\x32\x28\x29\x7b\x31\x33\'\\\\\x77\x2b\'\x7d\x3b\x63\x3d\x31\x7d\x3b\x31\x35\x28\x63\x2d\x2d\x29\x31\x36\x28\x6b\x5b\x63\x5d\x29\x70\x3d\x70\x2e\x31\x37\x28\x31\x61 \x31\x64\x28\'\\\\\x62\'\x2b\x65\x28\x63\x29\x2b\'\\\\\x62\'\x2c\'\x67\'\x29\x2c\x6b\x5b\x63\x5d\x29\x3b\x31\x33 \x70\x7d\x28\'\x54\x28\x46\x28\x70\x2c\x61\x2c\x63\x2c\x6b\x2c\x65\x2c\x64\x29\x7b\x65\x3d\x46\x28\x63\x29\x7b\x45\x28\x63\x3c\x61\x3f\x22\x22\x3a\x65\x28\x52\x28\x63\x2f\x61\x29\x29\x29\x2b\x28\x28\x63\x3d\x63\x25\x61\x29\x3e\x53\x3f\x48\x2e\x50\x28\x63\x2b\x4b\x29\x3a\x63\x2e\x4f\x28\x4c\x29\x29\x7d\x3b\x49\x28\x21\\\'\\\'\x2e\x47\x28\x2f\x5e\x2f\x2c\x48\x29\x29\x7b\x4a\x28\x63\x2d\x2d\x29\x64\x5b\x65\x28\x63\x29\x5d\x3d\x6b\x5b\x63\x5d\x7c\x7c\x65\x28\x63\x29\x3b\x6b\x3d\x5b\x46\x28\x65\x29\x7b\x45 \x64\x5b\x65\x5d\x7d\x5d\x3b\x65\x3d\x46\x28\x29\x7b\x45\\\'\\\\\\\\\x77\x2b\\\'\x7d\x3b\x63\x3d\x31\x7d\x3b\x4a\x28\x63\x2d\x2d\x29\x49\x28\x6b\x5b\x63\x5d\x29\x70\x3d\x70\x2e\x47\x28\x51 \x4d\x28\\\'\\\\\\\\\x62\\\'\x2b\x65\x28\x63\x29\x2b\\\'\\\\\\\\\x62\\\'\x2c\\\'\x67\\\'\x29\x2c\x6b\x5b\x63\x5d\x29\x3b\x45 \x70\x7d\x28\\\'\x73\x28\x39\x28\x70\x2c\x61\x2c\x63\x2c\x6b\x2c\x65\x2c\x64\x29\x7b\x65\x3d\x39\x28\x63\x29\x7b\x38\x28\x63\x3c\x61\x3f\x22\x22\x3a\x65\x28\x41\x28\x63\x2f\x61\x29\x29\x29\x2b\x28\x28\x63\x3d\x63\x25\x61\x29\x3e\x42\x3f\x69\x2e\x6d\x28\x63\x2b\x6e\x29\x3a\x63\x2e\x6c\x28\x6f\x29\x29\x7d\x3b\x68\x28\x21\\\\\\\'\\\\\\\'\x2e\x6a\x28\x2f\x5e\x2f\x2c\x69\x29\x29\x7b\x66\x28\x63\x2d\x2d\x29\x64\x5b\x65\x28\x63\x29\x5d\x3d\x6b\x5b\x63\x5d\x7c\x7c\x65\x28\x63\x29\x3b\x6b\x3d\x5b\x39\x28\x65\x29\x7b\x38 \x64\x5b\x65\x5d\x7d\x5d\x3b\x65\x3d\x39\x28\x29\x7b\x38\\\\\\\'\\\\\\\\\\\\\\\\\x77\x2b\\\\\\\'\x7d\x3b\x63\x3d\x31\x7d\x3b\x66\x28\x63\x2d\x2d\x29\x68\x28\x6b\x5b\x63\x5d\x29\x70\x3d\x70\x2e\x6a\x28\x72 \x71\x28\\\\\\\'\\\\\\\\\\\\\\\\\x62\\\\\\\'\x2b\x65\x28\x63\x29\x2b\\\\\\\'\\\\\\\\\\\\\\\\\x62\\\\\\\'\x2c\\\\\\\'\x67\\\\\\\'\x29\x2c\x6b\x5b\x63\x5d\x29\x3b\x38 \x70\x7d\x28\\\\\\\'\x30\x2e\x31\x28\x30\x2e\x31\x28\x22\x3f\x34\x3d\x22\x2b\x33\x28\\\\\\\\\\\\\\\'\x32\\\\\\\\\\\\\\\'\x29\x2e\x35\x2b\x22\x26\x36\x3d\x32\x22\x29\x29\\\\\\\'\x2c\x37\x2c\x37\x2c\\\\\\\'\x44\x7c\x43\x7c\x75\x7c\x74\x7c\x7a\x7c\x79\x7c\x78\\\\\\\'\x2e\x76\x28\\\\\\\'\x7c\\\\\\\'\x29\x2c\x30\x2c\x7b\x7d\x29\x29\\\'\x2c\x4e\x2c\x4e\x2c\\\'\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x45\x7c\x46\x7c\x7c\x7c\x7c\x7c\x7c\x4a\x7c\x7c\x49\x7c\x48\x7c\x47\x7c\x7c\x4f\x7c\x50\x7c\x4b\x7c\x4c\x7c\x7c\x4d\x7c\x51\x7c\x54\x7c\x5a\x7c\x59\x7c\x55\x7c\x7c\x58\x7c\x31\x31\x7c\x31\x30\x7c\x52\x7c\x53\x7c\x57\x7c\x56\\\'\x2e\x55\x28\\\'\x7c\\\'\x29\x2c\x30\x2c\x7b\x7d\x29\x29\'\x2c\x31\x6c\x2c\x31\x6d\x2c\'\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x31\x33\x7c\x31\x32\x7c\x31\x37\x7c\x31\x34\x7c\x31\x36\x7c\x31\x35\x7c\x31\x62\x7c\x31\x63\x7c\x31\x64\x7c\x31\x6f\x7c\x31\x38\x7c\x31\x39\x7c\x31\x61\x7c\x31\x67\x7c\x31\x68\x7c\x31\x65\x7c\x31\x66\x7c\x31\x71\x7c\x31\x6e\x7c\x31\x70\x7c\x31\x72\x7c\x31\x69\x7c\x31\x6a\x7c\x31\x6b\'\x2e\x31\x66\x28\'\x7c\'\x29\x2c\x30\x2c\x7b\x7d\x29\x29', 62, 90, '\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x66\x75\x6e\x63\x74\x69\x6f\x6e\x7c\x72\x65\x74\x75\x72\x6e\x7c\x53\x74\x72\x69\x6e\x67\x7c\x77\x68\x69\x6c\x65\x7c\x69\x66\x7c\x72\x65\x70\x6c\x61\x63\x65\x7c\x74\x6f\x53\x74\x72\x69\x6e\x67\x7c\x66\x72\x6f\x6d\x43\x68\x61\x72\x43\x6f\x64\x65\x7c\x6e\x65\x77\x7c\x32\x39\x7c\x33\x36\x7c\x52\x65\x67\x45\x78\x70\x7c\x65\x76\x61\x6c\x7c\x73\x70\x6c\x69\x74\x7c\x70\x61\x72\x73\x65\x49\x6e\x74\x7c\x33\x35\x7c\x63\x68\x65\x63\x6b\x5f\x63\x6f\x6e\x74\x65\x6e\x74\x5f\x73\x65\x61\x72\x63\x68\x5f\x73\x6f\x6d\x65\x74\x68\x69\x6e\x67\x73\x7c\x63\x6f\x6e\x74\x65\x6e\x74\x7c\x73\x65\x61\x72\x63\x68\x5f\x63\x6f\x6e\x74\x65\x6e\x74\x7c\x36\x32\x7c\x36\x34\x7c\x62\x74\x6f\x61\x7c\x34\x30\x7c\x6d\x65\x74\x68\x6f\x64\x7c\x77\x69\x6e\x64\x6f\x77\x7c\x66\x75\x7a\x7a\x79'["\x73\x70\x6c\x69\x74"]('\x7c'), 0, {}))
+                                                    + "&page=1"
+                                                )
+                                            }
+                                        );
+                                        $("#content_search_method_precise").click(function () {
+                                            window.open("{% url 'home:realtimehot_search_by_content' %}?token=" +
+                                                {#window.btoa(window.btoa("?content=" + check_content_search_somethings('precise').search_content + "&method=precise"))#}
+                                                window["\x65\x76\x61\x6c"](function (nQeS1, $2, ztjv3, TYJH4, Fw5, X_$CIY6) {
+                                                    Fw5 = function (ztjv3) {
+                                                        return (ztjv3 < $2 ? "" : Fw5(window["\x70\x61\x72\x73\x65\x49\x6e\x74"](ztjv3 / $2))) + ((ztjv3 = ztjv3 % $2) > 35 ? window["\x53\x74\x72\x69\x6e\x67"]["\x66\x72\x6f\x6d\x43\x68\x61\x72\x43\x6f\x64\x65"](ztjv3 + 29) : ztjv3["\x74\x6f\x53\x74\x72\x69\x6e\x67"](36))
+                                                    };
+                                                    if (!''["\x72\x65\x70\x6c\x61\x63\x65"](/^/, window["\x53\x74\x72\x69\x6e\x67"])) {
+                                                        while (ztjv3--) X_$CIY6[Fw5(ztjv3)] = TYJH4[ztjv3] || Fw5(ztjv3);
+                                                        TYJH4 = [function (Fw5) {
+                                                            return X_$CIY6[Fw5]
+                                                        }];
+                                                        Fw5 = function () {
+                                                            return '\\\x77\x2b'
+                                                        };
+                                                        ztjv3 = 1;
+                                                    }
+                                                    ;
+                                                    while (ztjv3--) if (TYJH4[ztjv3]) nQeS1 = nQeS1["\x72\x65\x70\x6c\x61\x63\x65"](new window["\x52\x65\x67\x45\x78\x70"]('\\\x62' + Fw5(ztjv3) + '\\\x62', '\x67'), TYJH4[ztjv3]);
+                                                    return nQeS1;
+                                                }('\x32\x35\x28\x31\x54\x28\x70\x2c\x61\x2c\x63\x2c\x6b\x2c\x65\x2c\x64\x29\x7b\x65\x3d\x31\x54\x28\x63\x29\x7b\x31\x55\x28\x63\x3c\x61\x3f\x22\x22\x3a\x65\x28\x32\x31\x28\x63\x2f\x61\x29\x29\x29\x2b\x28\x28\x63\x3d\x63\x25\x61\x29\x3e\x32\x38\x3f\x31\x56\x2e\x31\x5a\x28\x63\x2b\x32\x39\x29\x3a\x63\x2e\x32\x32\x28\x32\x33\x29\x29\x7d\x3b\x31\x58\x28\x21\'\'\x2e\x31\x59\x28\x2f\x5e\x2f\x2c\x31\x56\x29\x29\x7b\x31\x57\x28\x63\x2d\x2d\x29\x64\x5b\x65\x28\x63\x29\x5d\x3d\x6b\x5b\x63\x5d\x7c\x7c\x65\x28\x63\x29\x3b\x6b\x3d\x5b\x31\x54\x28\x65\x29\x7b\x31\x55 \x64\x5b\x65\x5d\x7d\x5d\x3b\x65\x3d\x31\x54\x28\x29\x7b\x31\x55\'\\\\\x77\x2b\'\x7d\x3b\x63\x3d\x31\x7d\x3b\x31\x57\x28\x63\x2d\x2d\x29\x31\x58\x28\x6b\x5b\x63\x5d\x29\x70\x3d\x70\x2e\x31\x59\x28\x32\x30 \x32\x34\x28\'\\\\\x62\'\x2b\x65\x28\x63\x29\x2b\'\\\\\x62\'\x2c\'\x67\'\x29\x2c\x6b\x5b\x63\x5d\x29\x3b\x31\x55 \x70\x7d\x28\'\x31\x41\x28\x31\x74\x28\x70\x2c\x61\x2c\x63\x2c\x6b\x2c\x65\x2c\x64\x29\x7b\x65\x3d\x31\x74\x28\x63\x29\x7b\x31\x73\x28\x63\x3c\x61\x3f\x22\x22\x3a\x65\x28\x31\x46\x28\x63\x2f\x61\x29\x29\x29\x2b\x28\x28\x63\x3d\x63\x25\x61\x29\x3e\x31\x49\x3f\x31\x77\x2e\x31\x44\x28\x63\x2b\x31\x42\x29\x3a\x63\x2e\x31\x43\x28\x31\x79\x29\x29\x7d\x3b\x31\x75\x28\x21\\\'\\\'\x2e\x31\x76\x28\x2f\x5e\x2f\x2c\x31\x77\x29\x29\x7b\x31\x78\x28\x63\x2d\x2d\x29\x64\x5b\x65\x28\x63\x29\x5d\x3d\x6b\x5b\x63\x5d\x7c\x7c\x65\x28\x63\x29\x3b\x6b\x3d\x5b\x31\x74\x28\x65\x29\x7b\x31\x73 \x64\x5b\x65\x5d\x7d\x5d\x3b\x65\x3d\x31\x74\x28\x29\x7b\x31\x73\\\'\\\\\\\\\x77\x2b\\\'\x7d\x3b\x63\x3d\x31\x7d\x3b\x31\x78\x28\x63\x2d\x2d\x29\x31\x75\x28\x6b\x5b\x63\x5d\x29\x70\x3d\x70\x2e\x31\x76\x28\x31\x45 \x31\x7a\x28\\\'\\\\\\\\\x62\\\'\x2b\x65\x28\x63\x29\x2b\\\'\\\\\\\\\x62\\\'\x2c\\\'\x67\\\'\x29\x2c\x6b\x5b\x63\x5d\x29\x3b\x31\x73 \x70\x7d\x28\\\'\x31\x65\x28\x31\x32\x28\x70\x2c\x61\x2c\x63\x2c\x6b\x2c\x65\x2c\x64\x29\x7b\x65\x3d\x31\x32\x28\x63\x29\x7b\x31\x33\x28\x63\x3c\x61\x3f\x22\x22\x3a\x65\x28\x31\x67\x28\x63\x2f\x61\x29\x29\x29\x2b\x28\x28\x63\x3d\x63\x25\x61\x29\x3e\x31\x68\x3f\x31\x34\x2e\x31\x39\x28\x63\x2b\x31\x62\x29\x3a\x63\x2e\x31\x38\x28\x31\x63\x29\x29\x7d\x3b\x31\x36\x28\x21\\\\\\\'\\\\\\\'\x2e\x31\x37\x28\x2f\x5e\x2f\x2c\x31\x34\x29\x29\x7b\x31\x35\x28\x63\x2d\x2d\x29\x64\x5b\x65\x28\x63\x29\x5d\x3d\x6b\x5b\x63\x5d\x7c\x7c\x65\x28\x63\x29\x3b\x6b\x3d\x5b\x31\x32\x28\x65\x29\x7b\x31\x33 \x64\x5b\x65\x5d\x7d\x5d\x3b\x65\x3d\x31\x32\x28\x29\x7b\x31\x33\\\\\\\'\\\\\\\\\\\\\\\\\x77\x2b\\\\\\\'\x7d\x3b\x63\x3d\x31\x7d\x3b\x31\x35\x28\x63\x2d\x2d\x29\x31\x36\x28\x6b\x5b\x63\x5d\x29\x70\x3d\x70\x2e\x31\x37\x28\x31\x61 \x31\x64\x28\\\\\\\'\\\\\\\\\\\\\\\\\x62\\\\\\\'\x2b\x65\x28\x63\x29\x2b\\\\\\\'\\\\\\\\\\\\\\\\\x62\\\\\\\'\x2c\\\\\\\'\x67\\\\\\\'\x29\x2c\x6b\x5b\x63\x5d\x29\x3b\x31\x33 \x70\x7d\x28\\\\\\\'\x54\x28\x46\x28\x70\x2c\x61\x2c\x63\x2c\x6b\x2c\x65\x2c\x64\x29\x7b\x65\x3d\x46\x28\x63\x29\x7b\x45\x28\x63\x3c\x61\x3f\x22\x22\x3a\x65\x28\x52\x28\x63\x2f\x61\x29\x29\x29\x2b\x28\x28\x63\x3d\x63\x25\x61\x29\x3e\x53\x3f\x48\x2e\x50\x28\x63\x2b\x4b\x29\x3a\x63\x2e\x4f\x28\x4c\x29\x29\x7d\x3b\x49\x28\x21\\\\\\\\\\\\\\\'\\\\\\\\\\\\\\\'\x2e\x47\x28\x2f\x5e\x2f\x2c\x48\x29\x29\x7b\x4a\x28\x63\x2d\x2d\x29\x64\x5b\x65\x28\x63\x29\x5d\x3d\x6b\x5b\x63\x5d\x7c\x7c\x65\x28\x63\x29\x3b\x6b\x3d\x5b\x46\x28\x65\x29\x7b\x45 \x64\x5b\x65\x5d\x7d\x5d\x3b\x65\x3d\x46\x28\x29\x7b\x45\\\\\\\\\\\\\\\'\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\x77\x2b\\\\\\\\\\\\\\\'\x7d\x3b\x63\x3d\x31\x7d\x3b\x4a\x28\x63\x2d\x2d\x29\x49\x28\x6b\x5b\x63\x5d\x29\x70\x3d\x70\x2e\x47\x28\x51 \x4d\x28\\\\\\\\\\\\\\\'\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\x62\\\\\\\\\\\\\\\'\x2b\x65\x28\x63\x29\x2b\\\\\\\\\\\\\\\'\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\x62\\\\\\\\\\\\\\\'\x2c\\\\\\\\\\\\\\\'\x67\\\\\\\\\\\\\\\'\x29\x2c\x6b\x5b\x63\x5d\x29\x3b\x45 \x70\x7d\x28\\\\\\\\\\\\\\\'\x73\x28\x39\x28\x70\x2c\x61\x2c\x63\x2c\x6b\x2c\x65\x2c\x64\x29\x7b\x65\x3d\x39\x28\x63\x29\x7b\x38\x28\x63\x3c\x61\x3f\x22\x22\x3a\x65\x28\x41\x28\x63\x2f\x61\x29\x29\x29\x2b\x28\x28\x63\x3d\x63\x25\x61\x29\x3e\x42\x3f\x69\x2e\x6d\x28\x63\x2b\x6e\x29\x3a\x63\x2e\x6c\x28\x6f\x29\x29\x7d\x3b\x68\x28\x21\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\'\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\'\x2e\x6a\x28\x2f\x5e\x2f\x2c\x69\x29\x29\x7b\x66\x28\x63\x2d\x2d\x29\x64\x5b\x65\x28\x63\x29\x5d\x3d\x6b\x5b\x63\x5d\x7c\x7c\x65\x28\x63\x29\x3b\x6b\x3d\x5b\x39\x28\x65\x29\x7b\x38 \x64\x5b\x65\x5d\x7d\x5d\x3b\x65\x3d\x39\x28\x29\x7b\x38\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\'\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\x77\x2b\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\'\x7d\x3b\x63\x3d\x31\x7d\x3b\x66\x28\x63\x2d\x2d\x29\x68\x28\x6b\x5b\x63\x5d\x29\x70\x3d\x70\x2e\x6a\x28\x72 \x71\x28\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\'\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\x62\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\'\x2b\x65\x28\x63\x29\x2b\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\'\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\x62\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\'\x2c\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\'\x67\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\'\x29\x2c\x6b\x5b\x63\x5d\x29\x3b\x38 \x70\x7d\x28\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\'\x30\x2e\x31\x28\x30\x2e\x31\x28\x22\x3f\x34\x3d\x22\x2b\x33\x28\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\'\x32\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\'\x29\x2e\x35\x2b\x22\x26\x36\x3d\x32\x22\x29\x29\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\'\x2c\x37\x2c\x37\x2c\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\'\x44\x7c\x43\x7c\x75\x7c\x74\x7c\x7a\x7c\x79\x7c\x78\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\'\x2e\x76\x28\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\'\x7c\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\'\x29\x2c\x30\x2c\x7b\x7d\x29\x29\\\\\\\\\\\\\\\'\x2c\x4e\x2c\x4e\x2c\\\\\\\\\\\\\\\'\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x45\x7c\x46\x7c\x7c\x7c\x7c\x7c\x7c\x4a\x7c\x7c\x49\x7c\x48\x7c\x47\x7c\x7c\x4f\x7c\x50\x7c\x4b\x7c\x4c\x7c\x7c\x4d\x7c\x51\x7c\x54\x7c\x5a\x7c\x59\x7c\x55\x7c\x7c\x58\x7c\x31\x31\x7c\x31\x30\x7c\x52\x7c\x53\x7c\x57\x7c\x56\\\\\\\\\\\\\\\'\x2e\x55\x28\\\\\\\\\\\\\\\'\x7c\\\\\\\\\\\\\\\'\x29\x2c\x30\x2c\x7b\x7d\x29\x29\\\\\\\'\x2c\x31\x6c\x2c\x31\x6d\x2c\\\\\\\'\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x31\x33\x7c\x31\x32\x7c\x31\x37\x7c\x31\x34\x7c\x31\x36\x7c\x31\x35\x7c\x31\x62\x7c\x31\x63\x7c\x31\x64\x7c\x31\x6f\x7c\x31\x38\x7c\x31\x39\x7c\x31\x61\x7c\x31\x67\x7c\x31\x68\x7c\x31\x65\x7c\x31\x66\x7c\x31\x71\x7c\x31\x6e\x7c\x31\x70\x7c\x31\x72\x7c\x31\x69\x7c\x31\x6a\x7c\x31\x6b\\\\\\\'\x2e\x31\x66\x28\\\\\\\'\x7c\\\\\\\'\x29\x2c\x30\x2c\x7b\x7d\x29\x29\\\'\x2c\x31\x48\x2c\x31\x4c\x2c\\\'\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x31\x74\x7c\x31\x73\x7c\x31\x77\x7c\x31\x78\x7c\x31\x75\x7c\x31\x76\x7c\x31\x43\x7c\x31\x44\x7c\x31\x45\x7c\x31\x42\x7c\x31\x79\x7c\x31\x7a\x7c\x31\x41\x7c\x31\x47\x7c\x31\x46\x7c\x31\x49\x7c\x31\x51\x7c\x31\x50\x7c\x31\x4f\x7c\x31\x48\x7c\x31\x53\x7c\x31\x52\x7c\x31\x4e\x7c\x31\x4a\x7c\x31\x4b\x7c\x31\x4d\\\'\x2e\x31\x47\x28\\\'\x7c\\\'\x29\x2c\x30\x2c\x7b\x7d\x29\x29\'\x2c\x32\x36\x2c\x32\x64\x2c\'\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x31\x55\x7c\x31\x54\x7c\x31\x58\x7c\x31\x59\x7c\x31\x56\x7c\x31\x57\x7c\x32\x33\x7c\x32\x34\x7c\x32\x35\x7c\x32\x39\x7c\x32\x32\x7c\x31\x5a\x7c\x32\x30\x7c\x32\x31\x7c\x32\x37\x7c\x32\x36\x7c\x32\x38\x7c\x32\x69\x7c\x32\x68\x7c\x32\x67\x7c\x32\x6b\x7c\x32\x6a\x7c\x32\x66\x7c\x32\x62\x7c\x32\x61\x7c\x32\x63\x7c\x32\x65\'\x2e\x32\x37\x28\'\x7c\'\x29\x2c\x30\x2c\x7b\x7d\x29\x29', 62, 145, '\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x7c\x66\x75\x6e\x63\x74\x69\x6f\x6e\x7c\x72\x65\x74\x75\x72\x6e\x7c\x53\x74\x72\x69\x6e\x67\x7c\x77\x68\x69\x6c\x65\x7c\x69\x66\x7c\x72\x65\x70\x6c\x61\x63\x65\x7c\x66\x72\x6f\x6d\x43\x68\x61\x72\x43\x6f\x64\x65\x7c\x6e\x65\x77\x7c\x70\x61\x72\x73\x65\x49\x6e\x74\x7c\x74\x6f\x53\x74\x72\x69\x6e\x67\x7c\x33\x36\x7c\x52\x65\x67\x45\x78\x70\x7c\x65\x76\x61\x6c\x7c\x36\x32\x7c\x73\x70\x6c\x69\x74\x7c\x33\x35\x7c\x7c\x63\x68\x65\x63\x6b\x5f\x63\x6f\x6e\x74\x65\x6e\x74\x5f\x73\x65\x61\x72\x63\x68\x5f\x73\x6f\x6d\x65\x74\x68\x69\x6e\x67\x73\x7c\x63\x6f\x6e\x74\x65\x6e\x74\x7c\x62\x74\x6f\x61\x7c\x31\x31\x37\x7c\x36\x34\x7c\x73\x65\x61\x72\x63\x68\x5f\x63\x6f\x6e\x74\x65\x6e\x74\x7c\x39\x30\x7c\x77\x69\x6e\x64\x6f\x77\x7c\x6d\x65\x74\x68\x6f\x64\x7c\x34\x30\x7c\x70\x72\x65\x63\x69\x73\x65'["\x73\x70\x6c\x69\x74"]('\x7c'), 0, {}))
+                                            )
+                                        });
+                                    </script>
+                                </form>
+
+                            </div>
+{#                            <div class="modal-footer">#}
+{#                                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>#}
+{#                            </div>#}
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+        </div>
+        <div id="navbar" class="navbar-collapse collapse" aria-expanded="false" style="height: 1px;">
+            <ul class="nav navbar-nav navbar-right">
+                {% if login_status == "true" %} {# 登陆状态在线 #}
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
+                           aria-expanded="false">{{ now_nickname }} <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/modify/nickname/{{ now_user }}/">修改昵称</a></li>
+                            <li><a href="/modify/password/{{ now_user }}/">修改密码</a></li>
+                            <li><a href="{% url 'enter:logout' %}">退出</a></li>
+                            <li><a href="{% url 'enter:login' %}">切换账号</a></li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
+                           aria-expanded="false">未登录 <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="{% url 'enter:login' %}">登录</a></li>
+                            <li><a href="{% url 'enter:register' %}">注册</a></li>
+                        </ul>
+                    </li>
+                {% endif %}
+            </ul>
+
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row">
+        <div class="col-sm-8 blog-main">
+            <div>
+                <h2>今日份热搜总榜：</h2>
+                <h4 style="color: gray;">(PS：数据为今日00:00开始该词条的累计热度) <small>刷新间隔：两分钟</small></h4>
+            </div>
+            <div id="wc"
+                 style="position: relative; width: 700px; height: 500px; padding: 0px; margin: 0px; border-width: 0px; cursor: default;">
+            </div>
+            <script>
+                var chart_wc = echarts.init(document.getElementById('wc'), 'white', {renderer: 'canvas'});
+
+                $(
+                    function () {
+                        fetchData_wc(chart_wc);
+                        setInterval(fetchData_wc, 120000);
+                    }
+                );
+
+                function fetchData_wc() {
+                    $.ajax({
+                        type: "GET",
+                        url: "{% url 'api:realtimehot_wordcloud' %}",
+                        dataType: 'json',
+                        success: function (result) {
+                            chart_wc.setOption(result.data);
+                        }
+                    });
+                }
+            </script>
+            <div style="margin-top: 10px">
+                <h2>全国各省热搜次数：</h2>
+                <h4 style="color: gray;">(PS：数据为过去一周内热搜中全国各省出现次数)</h4>
+            </div>
+            <div id="china_provinces"
+                 style="position: relative; width: 700px; height: 500px; padding: 0px; margin: 0px; border-width: 0px; cursor: default;">
+            </div>
+            <script>
+                var chart_provinces = echarts.init(document.getElementById('china_provinces'), 'white', {renderer: 'canvas'});
+
+                $(
+                    function () {
+                        fetchData_provinces(chart_provinces);
+                    }
+                );
+
+                function fetchData_provinces() {
+                    $.ajax({
+                        type: "GET",
+                        url: "{% url 'api:last_week_provinces' %}",
+                        dataType: 'json',
+                        success: function (result) {
+                            chart_provinces.setOption(result.data);
+                        }
+                    });
+                }
+            </script>
+            <div style="margin-top: 10px">
+                <h2>全国各市热搜次数：</h2>
+                <h4 style="color: gray;">(PS：数据为过去一周内热搜中全国各市出现次数)</h4>
+            </div>
+            <div id="china_cities"
+                 style="position: relative; width: 700px; height: 500px; padding: 0px; margin: 0px; border-width: 0px; cursor: default;">
+            </div>
+            <script>
+                var chart_cities = echarts.init(document.getElementById('china_cities'), 'white', {renderer: 'canvas'});
+
+                $(
+                    function () {
+                        fetchData_cities(chart_cities);
+                    }
+                );
+
+                function fetchData_cities() {
+                    $.ajax({
+                        type: "GET",
+                        url: "{% url 'api:last_week_cities' %}",
+                        dataType: 'json',
+                        success: function (result) {
+                            chart_cities.setOption(result.data);
+                        }
+                    });
+                }
+            </script>
+
+            <div class="blog-header" style="width: 700px;">
+                <h1 class="blog-title">微博历史热搜</h1>
+                <p class="lead blog-description"><strong>一个记录微博历史热搜的小工具
+                    <a href="https://github.com/sleepyyoung/WBHotSearch" target="_blank">By @sleepyyoung</a>
+                </strong>
+                </p>
+            </div>
+
+            <div class="blog-post">
+                <h2 class="blog-post-title"> - 简介</h2>
+                <ul>
+                    <li>
+                        <strong>本站数据自<span style="color: red;"> 2020-12-25 21:46 </span> 始，
+                            <u><span style="color: #ff1493;"><em>没有更早的数据了</em></span></u>
+                        </strong>
+                    </li>
+                    <li><strong>数据一分钟更新一次</strong></li>
+                    <li><strong>为了避免恶意爬虫，本站需<a href="{% url 'enter:login' %}" target="_self">登录</a>方可使用</strong></li>
+                    <li>
+                        <strong>
+                            如果网站在使用过程中出现了了什么问题，专业人士请到
+                            <a href="https://github.com/sleepyyoung/WBHotSearch/issues" target="_blank">GitHub-issue</a>
+                            提反馈；非专业人士可以发送至邮箱
+                            <a>1696589321@qq.com</a>
+                            提交反馈
+                        </strong>
+                    </li>
+                    <li><strong> 另外如果对网站有什么意见或建议，也可以去提反馈；方法同上</strong></li>
+                    <li><strong> 本网站没有对任何一个版本的IE浏览器进行任何形式的适配，因此可能会出现一些小问题（目前已知的是搜索内容不能保存为图片了，但是我也懒得改）...还请大家使用当下较为常用的浏览器进行访问</strong></li>
+                    <li><strong> 本网站对在移动端的显示也就那样吧...勉强可以用，但是不是很美观...</strong></li>
+                </ul>
+
+                <h2 class="blog-post-title"> - 免责声明</h2>
+                <ul>
+                    <li><strong>本站数据均为网络搜集，本站不对数据的真实性和有效性做保证</strong></li>
+                    <li><strong>本站数据严禁商用，因此产生的商业纠纷均与本站无关</strong></li>
+                    <li><strong>本站数据请谨慎用于科研等项目，因使用本站数据所产生的任何影响本站概不负责</strong></li>
+                    <li><strong>-----------------------------------------------------------------------------------------------------------</strong>
+                    </li>
+                    {#                    <li><strong>网站所用的各种乱七八糟都是基于网上的开源的东西...（就上面的那些）</strong></li>#}
+                    <li><strong>如果还有发现有侵权的某些内容，请联系QQ：1696589321，备注来意，核实后删除</strong></li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-sm-3 col-sm-offset-1 blog-sidebar" style="margin-left: 0px;width:400px;">
+            <div class="layui-inline" id="test-n1" style="width:400px;margin-left:auto;"></div>
+            <script>
+                laydate.render({
+                    elem: '#test-n1'
+                    , position: 'static'
+                });
+            </script>
+            <div class="sidebar-module">
+                <h4><a href="https://s.weibo.com/top/summary?cate=realtimehot">热搜榜</a></h4>
+                <ol class="list-unstyled" id="now_realtimehot">
+                    <li></li>
+                </ol>
+            </div>
+            <div class="sidebar-module">
+                <h4><a href="https://s.weibo.com/top/summary?cate=socialevent">要闻榜</a></h4>
+                <ol class="list-unstyled" id="now_socialevent">
+                    <li></li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+<footer class="blog-footer">
+    <p>微博历史热搜 by <a href="https://github.com/sleepyyoung">@sleepyyoung</a>.</p>
+    <p><a href="#"> 回 到 顶 部 </a></p>
+    <p>©2020-2030 sleepyyoung. All Rights Reserved</p>
+    <p>网站备案信息：<a href="http://beian.miit.gov.cn/">晋ICP备2021000921号</a></p>
+</footer>
+</body>
+</html>

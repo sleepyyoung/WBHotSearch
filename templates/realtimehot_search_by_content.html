@@ -1,0 +1,487 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>微博历史热搜-{% if method == 'fuzzy' %}模糊查询{% else %}精确查询{% endif %}</title>
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.1.0/css/bootstrap.css">
+    <script type="text/javascript" src="https://assets.pyecharts.org/assets/echarts.min.js"></script>
+    <script type="text/javascript" src="https://assets.pyecharts.org/assets/themes/macarons.js"></script>
+    <script src={% static "/js/jquery-1.8.3.min.js" %}></script>
+    <script src={% static "/js/jquery-3.3.1.js" %}></script>
+    <script src={% static "/js/jquery.table2excel.js" %}></script>
+    <script src={% static "/js/FileSaver.js" %}></script>
+    <script src={% static "/js/dom-to-image.js" %}></script>
+    <script src={% static '/js/myjs.js' %}></script>
+</head>
+<body>
+{% if result_num != 0 %}
+    <div id="toimg">
+        <div class="page-header" style="text-align: center;margin-top: 5%;">
+            <h1>关键词: {{ content }}
+            </h1>
+            {% if method == 'fuzzy' %}
+                <h3>模糊查询</h3>共找到{{ result_num }}条记录
+                {% else %}{# if method == 'precise' #}
+                精确查询
+            {% endif %}
+        </div>
+        <div class="container">
+            <table class="table table-hover table2local" id="pstable">
+                <thead>
+                <tr>
+                    <th>关键词</th>
+                    <th>首次上榜时间</th>
+                    <th>最后在榜时间</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for i in all %}
+                    <tr onclick="window.open('{{ i.href }}')">
+                        <td><a>{{ i.title }}</a></td>
+                        <td><a>{{ i.datetime_earliest }}</a></td>
+                        <td><a>{{ i.datetime_latest }}</a></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if method == 'fuzzy' %}
+        <div style="margin-right: auto;margin-left: auto;text-align: center;">
+            <input type="button" value="导出到excel(xlsx)中" class="btn btn-primary"
+                   onclick="table2xlsx('realtimehot.xlsx')"/>
+            <input type="button" value="导出到excel(xls)中" class="btn btn-primary" onclick="table2xls('realtimehot.xls')"/>
+            <input type="button" value="导出到csv中" class="btn btn-primary" onclick="table2csv('realtimehot.csv')"/>
+            <input type="button" value="导出为图片" class="btn btn-primary" onclick="table2img('realtimehot.png')"/>
+        </div>
+{#    {% else %}#}
+{#    {% endif %}#}
+{#    {% if method == 'fuzzy' %}#}
+        <nav aria-label="Page navigation" style="text-align: center;">
+            <ul class="pagination" style="text-align: center;">
+                {% if all.has_previous %}
+                    <li>
+                        <a href="?token={{ token_s }}&page={{ all.previous_page_number }}" aria-label="Previous"><span
+                                aria-hidden="true">上一页</span>
+                        </a>
+                    </li>
+                {% endif %}
+
+                <li>
+                    <a href="?token={{ token_s }}&page=1" aria-label="Previous"><span aria-hidden="true">首页</span>
+                    </a>
+                </li>
+
+                {% if current_num > 6 %}
+                    <li>
+                        <span aria-hidden="true">...</span>
+                    </li>
+                {% endif %}
+
+                {% for i in page_range %}
+                    {% if current_num == i %}
+                        <li class="active">
+                            <a href="?token={{ token_s }}&page={{ i }}">{{ i }}</a>
+                        </li>
+                    {% else %}
+                        <li>
+                            <a href="?token={{ token_s }}&page={{ i }}">{{ i }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if current_num < tail_page_ellipsis %}
+                    <li>
+                        <span aria-hidden="true">...</span>
+                    </li>
+                {% endif %}
+
+                <li>
+                    <a href="?token={{ token_s }}&page={{ tail_page }}" aria-label="Previous">
+                        <span aria-hidden="true">末页</span>
+                    </a>
+                </li>
+
+                {% if all.has_next %}
+                    <li>
+                        <a href="?token={{ token_s }}&page={{ all.next_page_number }}"
+                           aria-label="Next">
+                            <span aria-hidden="true">下一页</span>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% else %}{#{% if method == 'precise' %}#}
+        {% if flag_top_or_not == 'true' %}
+            <div style="text-align: center;margin-top: 5%;">
+                <h1>该词条为置顶位，不存在排名及热度趋势图</h1>
+            </div>
+        {% else %}
+            <h3 style="margin-left: 50px">热度以及排名趋势:</h3>
+            <hr>
+            <div id="line" class="chart-container"
+                 style="width: 1200px; height: 900px; margin: auto; -webkit-tap-highlight-color: transparent; user-select: none; position: relative;">
+                <div style="position: relative; width: 1200px; height: 900px; padding: 0px; margin: 0px; border-width: 0px; cursor: default;">
+                    <canvas data-zr-dom-id="zr_0" width="1800" height="1350"
+                            style="position: absolute; left: 0px; top: 0px; width: 1200px; height: 900px; user-select: none; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); padding: 0px; margin: 0px; border-width: 0px;"></canvas>
+                </div>
+            </div>
+            <script>
+                var chart = echarts.init(
+                    document.getElementById('line'), 'macarons', {renderer: 'canvas'});
+                var option = {
+                    "animation": true,
+                    "animationThreshold": 2000,
+                    "animationDuration": 1000,
+                    "animationEasing": "cubicOut",
+                    "animationDelay": 0,
+                    "animationDurationUpdate": 300,
+                    "animationEasingUpdate": "cubicOut",
+                    "animationDelayUpdate": 0,
+                    "color": [],
+                    "series": [
+                        {
+                            "type": "line",
+                            "name": "{{ name_heat }}",//热度
+                            "connectNulls": false,
+                            "xAxisIndex": 0,
+                            "yAxisIndex": 0,
+                            "symbolSize": 5,
+                            "showSymbol": true,
+                            "smooth": true,
+                            "clip": true,
+                            "step": false,
+                            "data": {{ data_date_heat|safe }},
+                            "hoverAnimation": false,
+                            "label": {
+                                "show": false,
+                                "position": "top",
+                                "margin": 8
+                            },
+                            "lineStyle": {
+                                "show": true,
+                                "width": 1.5,
+                                "opacity": 1,
+                                "curveness": 0,
+                                "type": "solid"
+                            },
+                            "areaStyle": {
+                                "opacity": 0
+                            },
+                            "zlevel": 0,
+                            "z": 0
+                        },
+                        {
+                            "type": "line",
+                            "name": "{{ name_srank }}",//排名
+                            "connectNulls": false,
+                            "xAxisIndex": 1,
+                            "yAxisIndex": 1,
+                            "symbolSize": 8,
+                            "showSymbol": true,
+                            "smooth": false,
+                            "clip": true,
+                            "step": false,
+                            "data": {{ data_date_srank|safe }},
+                            "hoverAnimation": true,
+                            "label": {
+                                "show": false,
+                                "position": "top",
+                                "margin": 8
+                            },
+                            "lineStyle": {
+                                "show": true,
+                                "width": 1.5,
+                                "opacity": 1,
+                                "curveness": 0,
+                                "type": "solid"
+                            },
+                            "areaStyle": {
+                                "opacity": 0
+                            },
+                            "zlevel": 0,
+                            "z": 0
+                        }
+                    ],
+                    "legend": [
+                        {
+                            "data": [
+                                "{{ name_heat }}"//热度
+                            ],
+                            "selected": {
+                                "{{ name_heat }}": true//热度
+                            },
+                            "show": true,
+                            "left": "left",
+                            "padding": 5,
+                            "itemGap": 10,
+                            "itemWidth": 25,
+                            "itemHeight": 14
+                        },
+                        {
+                            "data": [
+                                "{{ name_srank }}"//排名
+                            ],
+                            "selected": {
+                                "{{ name_srank }}": true//排名
+                            },
+                            "show": true,
+                            "left": "7%",
+                            "padding": 5,
+                            "itemGap": 10,
+                            "itemWidth": 25,
+                            "itemHeight": 14
+                        }
+                    ],
+                    "tooltip": {
+                        "show": true,
+                        "trigger": "axis",
+                        "triggerOn": "mousemove|click",
+                        "axisPointer": {
+                            "type": "line"
+                        },
+                        "showContent": true,
+                        "alwaysShowContent": false,
+                        "showDelay": 0,
+                        "hideDelay": 100,
+                        "textStyle": {
+                            "fontSize": 14
+                        },
+                        "borderWidth": 0,
+                        "padding": 5
+                    },
+                    "xAxis": [
+                        {
+                            "type": "category",
+                            "show": true,
+                            "scale": false,
+                            "nameLocation": "end",
+                            "nameGap": 15,
+                            "gridIndex": 0,
+                            "axisLine": {
+                                "show": true,
+                                "onZero": true,
+                                "onZeroAxisIndex": 0
+                            },
+                            "axisTick": {
+                                "show": false,
+                                "alignWithLabel": false,
+                                "inside": false
+                            },
+                            "axisLabel": {
+                                "show": false,
+                                "position": "top",
+                                "margin": 8
+                            },
+                            "inverse": false,
+                            "offset": 0,
+                            "splitNumber": 5,
+                            "boundaryGap": false,
+                            "minInterval": 0,
+                            "splitLine": {
+                                "show": false,
+                                "lineStyle": {
+                                    "show": true,
+                                    "width": 1,
+                                    "opacity": 1,
+                                    "curveness": 0,
+                                    "type": "solid"
+                                }
+                            },
+                            "data": {{ x_data|safe }}
+                        },
+                        {
+                            "type": "category",
+                            "show": true,
+                            "scale": false,
+                            "nameLocation": "end",
+                            "nameGap": 15,
+                            "gridIndex": 1,
+                            "axisLine": {
+                                "show": true,
+                                "onZero": true,
+                                "onZeroAxisIndex": 0
+                            },
+                            "axisLabel": {
+                                "show": true,
+                                "position": "top",
+                                "rotate": 90,
+                                "margin": 8
+                            },
+                            "inverse": false,
+                            "position": "top",
+                            "offset": 0,
+                            "splitNumber": 5,
+                            "boundaryGap": false,
+                            "minInterval": 0,
+                            "splitLine": {
+                                "show": false,
+                                "lineStyle": {
+                                    "show": true,
+                                    "width": 1,
+                                    "opacity": 1,
+                                    "curveness": 0,
+                                    "type": "solid"
+                                }
+                            },
+                            "data": {{ x_data|safe }}
+                        }
+                    ],
+                    "yAxis": [
+                        {
+                            "name": "{{ name_heat }}",//热度
+                            "show": true,
+                            "scale": false,
+                            "nameLocation": "end",
+                            "nameGap": 15,
+                            "gridIndex": 0,
+                            "axisLabel": {
+                                "show": true,
+                                "position": "top",
+                                "rotate": 60,
+                                "margin": 8
+                            },
+                            "inverse": false,
+                            "offset": 0,
+                            "splitNumber": 5,
+                            "minInterval": 0,
+                            "splitLine": {
+                                "show": false,
+                                "lineStyle": {
+                                    "show": true,
+                                    "width": 1,
+                                    "opacity": 1,
+                                    "curveness": 0,
+                                    "type": "solid"
+                                }
+                            }
+                        },
+                        {
+                            "name": "{{ name_srank }}",//排名
+                            "show": true,
+                            "scale": false,
+                            "nameLocation": "end",
+                            "nameGap": 15,
+                            "gridIndex": 1,
+                            "inverse": true,
+                            "offset": 0,
+                            "splitNumber": 5,
+                            "minInterval": 0,
+                            "splitLine": {
+                                "show": false,
+                                "lineStyle": {
+                                    "show": true,
+                                    "width": 1,
+                                    "opacity": 1,
+                                    "curveness": 0,
+                                    "type": "solid"
+                                }
+                            }
+                        }
+                    ],
+                    "title": [
+                        {
+                            "text": "{{ title_text }}",//title_text
+                            "subtext": "{{ title_subtext }}",//title_subtext
+                            "left": "center",
+                            "padding": 5,
+                            "itemGap": 10
+                        },
+                        {
+                            "padding": 5,
+                            "itemGap": 10
+                        }
+                    ],
+                    "toolbox": {
+                        "show": true,
+                        "orient": "horizontal",
+                        "itemSize": 15,
+                        "itemGap": 10,
+                        "left": "80%",
+                        "feature": {
+                            "dataZoom": {
+                                "yAxisIndex": "none"
+                            },
+                            "restore": {},
+                            "saveAsImage": {}
+                        }
+                    },
+                    "dataZoom": [
+                        {
+                            "show": true,
+                            "type": "slider",
+                            "realtime": true,
+                            "start": 0,
+                            "end": 100,
+                            "orient": "horizontal",
+                            "xAxisIndex": [
+                                0,
+                                1
+                            ],
+                            "zoomLock": false,
+                            "filterMode": "filter"
+                        }
+                    ],
+                    "axisPointer": {
+                        "show": true,
+                        "type": "line",
+                        "link": [
+                            {
+                                "xAxisIndex": "all"
+                            }
+                        ]
+                    },
+                    "grid": [
+                        {
+                            "show": false,
+                            "zlevel": 0,
+                            "z": 2,
+                            "left": 50,
+                            "right": 50,
+                            "height": "35%",
+                            "containLabel": false,
+                            "backgroundColor": "transparent",
+                            "borderColor": "#ccc",
+                            "borderWidth": 1
+                        },
+                        {
+                            "show": false,
+                            "zlevel": 0,
+                            "z": 2,
+                            "left": 50,
+                            "top": "57%",
+                            "right": 50,
+                            "height": "35%",
+                            "containLabel": false,
+                            "backgroundColor": "transparent",
+                            "borderColor": "#ccc",
+                            "borderWidth": 1
+                        }
+                    ]
+                };
+                chart.setOption(option);
+            </script>
+        {% endif %}
+    {% endif %}
+{% else %}
+    <div class="jumbotron">
+        {% if method  == 'fuzzy' %}
+            <h1>模糊查询<small>未查找到内容，建议更换关键词试试</small></h1>
+        {% else %}
+            <h1>精确查询<small>未查找到内容，建议更换关键词试试</small></h1>
+        {% endif %}
+        <p>当前关键词:<strong>{{ content }}</strong></p>
+
+        <p><a class="btn btn-primary btn-lg"
+              href="javascript:window.opener=null;window.open('','_self');window.close();"
+              role="button">关闭</a></p>
+    </div>
+{% endif %}
+
+{% include 'return_top.html' %}
+
+</body>
+</html>
+
